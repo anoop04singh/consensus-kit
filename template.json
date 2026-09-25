@@ -1,0 +1,14 @@
+{
+  "create-scaffold-hbar": {
+    "capabilities": {
+      "frontend": ["none"],
+      "solidityFramework": ["none"],
+      "packageManager": ["npm"]
+    },
+    "defaults": {
+      "frontend": "none",
+      "solidityFramework": "none",
+      "packageManager": "npm"
+    }
+  }
+}
