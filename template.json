@@ -18,6 +18,18 @@
         "paths": [
           "."
         ]
+      },
+      "\"name\": \"consensus-kit\"": {
+        "to": "\"name\": \"{{projectName}}\"",
+        "paths": [
+          "."
+        ]
+      },
+      "ConsensusKit project": {
+        "to": "{{projectName}}",
+        "paths": [
+          "."
+        ]
       }
     },
     "capabilities": {
@@ -39,30 +51,41 @@
     "outro": {
       "sections": [
         {
-          "title": "Configure ConsensusKit",
+          "title": "Configure your project",
           "steps": [
             {
-              "label": "Run the interactive setup",
+              "label": "Interactive testnet setup",
               "command": "{run:setup}"
             },
             {
-              "text": "The wizard asks for your account ID, masked private key, database URL, and topic. It can create the topic and initialize your database."
+              "text": "Enter your credentials and database URL. Setup can create a topic and run your registered migrations."
             }
           ]
         },
         {
-          "title": "Run your application",
+          "title": "Define your application",
           "steps": [
             {
-              "label": "Terminal 1: index HCS events",
+              "text": "Register your projectors in consensus.projectors.ts and your domain SQL in scripts/migrations.ts."
+            },
+            {
+              "text": "Read docs/customization.md to replace the tasks example or start with only the infrastructure."
+            }
+          ]
+        },
+        {
+          "title": "Run the event infrastructure",
+          "steps": [
+            {
+              "label": "Terminal 1: index your topic",
               "command": "{run:consensus:indexer}"
             },
             {
-              "label": "Terminal 2: open the explorer",
+              "label": "Terminal 2: inspect events",
               "command": "{run:dev}"
             },
             {
-              "label": "Publish the example",
+              "label": "Optional: try the bundled tasks example",
               "command": "{run:example:publish}"
             }
           ]

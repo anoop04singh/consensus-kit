@@ -7,3 +7,6 @@ coverage/
 *.log
 .verification/
 *.tgz
+
+# Evidence generated for this project
+/testnet-evidence.json

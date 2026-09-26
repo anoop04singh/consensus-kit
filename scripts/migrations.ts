@@ -4,7 +4,8 @@ import { createPool } from '../packages/database/schema.js';
 // Application composition: add your domain migrations here.
 export const migrationFiles = [
   new URL('../packages/database/migrations/001_initial.sql', import.meta.url),
-  new URL('../packages/example/migration.sql', import.meta.url)
+  // Optional tasks example: remove this entry before migration for a framework-only database.
+  new URL('../packages/example/migration.sql', import.meta.url),
 ];
 
 export async function migrateDatabase(databaseUrl: string) {
@@ -17,5 +18,8 @@ export async function migrateDatabase(databaseUrl: string) {
   } catch (error) {
     await db.query('ROLLBACK');
     throw error;
-  } finally { db.release(); await pool.end(); }
+  } finally {
+    db.release();
+    await pool.end();
+  }
 }

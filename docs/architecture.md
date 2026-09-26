@@ -18,7 +18,7 @@ ConsensusKit supplies reusable infrastructure for one HCS topic, ordered ingesti
 | `scripts/migrations.ts`   | Application migration composition.                                        |
 | `scripts/setup.ts`        | Interactive configuration and initialization.                             |
 
-This is an npm workspace monorepo. The Scaffold-HBAR manifest declares frontend and Solidity selections as none: the template supplies its own explorer and uses HCS directly.
+This is a workspace monorepo managed with npm. The Scaffold-HBAR manifest declares frontend and Solidity selections as none: the template supplies its own explorer and uses HCS directly.
 
 ## Data flow
 
@@ -64,7 +64,7 @@ Deduplication applies to event IDs, not business actions. Separate publish calls
 
 Includes topic creation, generic publishing, hashing, ingestion, checkpointing, projectors, verification, replay, interactive setup, and an infrastructure explorer.
 
-Supports Node.js 20.18.3 or newer under the MIT license. Offline tests cover framework invariants; the optional integration test exercises the complete testnet/database pipeline. Public evidence is in [testnet-evidence.json](../testnet-evidence.json).
+Supports Node.js 20.18.3 or newer under the MIT license. Offline tests cover framework invariants; the optional integration test exercises the complete testnet/database pipeline. Public evidence is in [template evidence](evidence/README.md).
 
 ## Boundaries
 
