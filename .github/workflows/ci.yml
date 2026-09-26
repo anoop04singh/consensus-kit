@@ -28,6 +28,10 @@ jobs:
       - name: Generate a project from this checkout
         env:
           CREATE_SCAFFOLD_HBAR_TEMPLATE_DIR: ${{ github.workspace }}
+          GIT_AUTHOR_NAME: ConsensusKit CI
+          GIT_AUTHOR_EMAIL: ci@consensuskit.local
+          GIT_COMMITTER_NAME: ConsensusKit CI
+          GIT_COMMITTER_EMAIL: ci@consensuskit.local
         run: |
           cd "$RUNNER_TEMP"
           npx --yes create-scaffold-hbar@0.4.0 sample-events --template anoop04singh/consensus-kit#master --frontend none --solidity-framework none --network testnet --package-manager npm --skip-hedera-skills --ci
