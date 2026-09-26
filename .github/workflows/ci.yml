@@ -16,3 +16,26 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Generate a project from this checkout
+        env:
+          CREATE_SCAFFOLD_HBAR_TEMPLATE_DIR: ${{ github.workspace }}
+        run: |
+          cd "$RUNNER_TEMP"
+          npx --yes create-scaffold-hbar@0.4.0 sample-events --template anoop04singh/consensus-kit#master --frontend none --solidity-framework none --network testnet --package-manager npm --skip-hedera-skills --ci
+      - name: Check installed runtime and generated project
+        run: |
+          cd "$RUNNER_TEMP/sample-events"
+          node -e "require('node:module').createRequire(require.resolve('@hiero-ledger/proto')).resolve('protobufjs/minimal.js')"
+          npm run setup -- --help
+          npm run lint
+          npm test
+          npm run build

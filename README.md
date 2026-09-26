@@ -6,6 +6,8 @@ ConsensusKit is a Scaffold-HBAR template that connects Hedera Consensus Service 
 
 You own the event types, business logic, projections, and application UI. ConsensusKit supplies the publishing, indexing, verification, and replay infrastructure.
 
+In a generated project, start with `npm run setup`, then [customize your events and projectors](docs/customization.md). The tasks stream is an optional example; `consensus.projectors.ts` and `scripts/migrations.ts` are the two places to register your own domain. The generic explorer works without the tasks example.
+
 ## Features
 
 - Versioned events with deterministic SHA-256 payload hashes.
@@ -31,7 +33,7 @@ The quick start uses testnet. For a mainnet application, follow [Mainnet setup](
 ### 1. Create your project
 
 ```bash
-npm create scaffold-hbar@latest my-consensus-app -- --template anoop04singh/consensus-kit#master --network testnet
+npx create-scaffold-hbar@latest my-consensus-app --template anoop04singh/consensus-kit#master --network testnet
 cd my-consensus-app
 ```
 
@@ -153,6 +155,8 @@ Follow [Build an application](docs/build-an-application.md) for a complete examp
 
 - [Mainnet setup](docs/mainnet.md) — network configuration, credentials, topics, and deployment.
 - [Configuration](docs/configuration.md) — wizard, environment, PostgreSQL, and Supabase.
+- [Customize your project](docs/customization.md) — replace or disable the tasks example.
+- [Installation](docs/installation.md) — create a new project or use a source checkout.
 - [Build an application](docs/build-an-application.md) — events, migrations, and projectors.
 - [API reference](docs/api-reference.md) — SDK, event format, and HTTP endpoints.
 - [Operations and troubleshooting](docs/operations.md) — tests, replay, recovery, and deployment.
@@ -160,7 +164,7 @@ Follow [Build an application](docs/build-an-application.md) for a complete examp
 
 ## Testnet evidence
 
-[testnet-evidence.json](testnet-evidence.json) contains public identifiers for a verified message on topic `0.0.10716275`, sequence `3`.
+[Template testnet evidence](docs/evidence/README.md) contains public identifiers for a verified message on topic `0.0.10716275`, sequence `3`. This is evidence for the template; generate proof for your own topic with the command below.
 
 - [Mirror Node message](https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10716275/messages/3)
 - [Hashscan topic](https://hashscan.io/testnet/topic/0.0.10716275)
