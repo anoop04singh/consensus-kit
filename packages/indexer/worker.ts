@@ -7,7 +7,6 @@ import { createPool } from '../database/schema.js';
 import { advanceCheckpoint, lockCheckpoint } from './checkpoint.js';
 import { decodeMirrorEvent, listMessages, type MirrorMessage } from './mirror-node.js';
 import { project } from './projector.js';
-import '../example/projector.js';
 
 export async function indexMessage(pool: pg.Pool, topicId: string, row: MirrorMessage): Promise<'indexed' | 'already-indexed' | 'duplicate'> {
   const db = await pool.connect();
@@ -60,8 +59,4 @@ export async function runIndexer(settings = config): Promise<void> {
       if (count === 0) await new Promise(resolve => setTimeout(resolve, settings.indexer.intervalMs));
     }
   } finally { await pool.end(); }
-}
-
-if (process.argv[1]?.replace(/\\/g, '/').endsWith('/packages/indexer/worker.ts')) {
-  runIndexer().catch(error => { console.error(error); process.exitCode = 1; });
 }

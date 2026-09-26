@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import '../consensus.projectors.js';
 import config from '../consensus.config.js';
 import { publish } from '../packages/consensus/publish.js';
 import { verify } from '../packages/consensus/verify.js';
@@ -31,7 +32,9 @@ describe.skipIf(!enabled)('Hedera testnet integration', () => {
       expect((await pool.query('SELECT title FROM example_tasks WHERE task_id = $1', [entityId])).rows[0]?.title).toBe('Integration');
       expect((await verify(config, result.eventId)).verified).toBe(true);
       expect(await indexBatch(pool, config)).toBeGreaterThanOrEqual(0);
+      const before = (await pool.query('SELECT task_id, title FROM example_tasks ORDER BY task_id')).rows;
       await rebuild();
+      expect((await pool.query('SELECT task_id, title FROM example_tasks ORDER BY task_id')).rows).toEqual(before);
       expect((await pool.query('SELECT title FROM example_tasks WHERE task_id = $1', [entityId])).rows[0]?.title).toBe('Integration');
     } finally { await pool.end(); }
   }, 120000);

@@ -4,7 +4,6 @@ import { requireDatabaseUrl, requireTopicId } from '../consensus/config.js';
 import { createPool } from '../database/schema.js';
 import { indexBatch } from './worker.js';
 import { resetProjections } from './projector.js';
-import '../example/projector.js';
 
 export async function rebuild() {
   const topicId = requireTopicId(config);
@@ -27,8 +26,4 @@ export async function rebuild() {
     await db.query('ROLLBACK').catch(() => undefined);
     throw error;
   } finally { db.release(); await pool.end(); }
-}
-
-if (process.argv[1]?.replace(/\\/g, '/').endsWith('/packages/indexer/rebuild.ts')) {
-  rebuild().catch(error => { console.error(error); process.exitCode = 1; });
 }

@@ -15,8 +15,8 @@ export async function publish<T>(config: ConsensusConfig, input: PublishInput<T>
     stream: parsed.stream,
     entityId: parsed.entityId,
     type: parsed.type,
-    payload: input.payload,
-    payloadHash: hashPayload(input.payload),
+    payload: parsed.payload as T,
+    payloadHash: hashPayload(parsed.payload),
     ...(parsed.metadata ? { metadata: parsed.metadata } : {}),
     timestamp: new Date().toISOString()
   };

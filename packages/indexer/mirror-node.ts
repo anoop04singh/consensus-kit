@@ -15,10 +15,24 @@ function endpoint(base: string, topicId: string) {
   return `${base.replace(/\/$/, '')}/api/v1/topics/${topicId}/messages`;
 }
 
-async function request(url: string): Promise<Response> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`Mirror Node request failed: ${response.status} ${url}`);
-  return response;
+async function request(url: string, allowMissing = false): Promise<Response> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response: Response;
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    } catch (error) {
+      if (attempt === 2) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500 * 2 ** attempt));
+      continue;
+    }
+    if (response.ok || (allowMissing && response.status === 404)) return response;
+    if (attempt === 2 || (response.status !== 429 && response.status < 500)) {
+      throw new Error(`Mirror Node request failed: ${response.status}`);
+    }
+    await response.body?.cancel();
+    await new Promise(resolve => setTimeout(resolve, 500 * 2 ** attempt));
+  }
+  throw new Error('Mirror Node request exhausted retries');
 }
 
 function parseMessage(row: MirrorResponse['messages'][number]): MirrorMessage {
@@ -34,7 +48,7 @@ function parseMessage(row: MirrorResponse['messages'][number]): MirrorMessage {
 
 export async function listMessages(base: string, topicId: string, afterSequence: number): Promise<MirrorMessage[]> {
   const url = new URL(endpoint(base, topicId));
-  url.searchParams.set('sequencenumber', `gt:${afterSequence}`);
+  url.searchParams.set('sequencenumber', afterSequence === 0 ? 'gte:1' : `gt:${afterSequence}`);
   url.searchParams.set('order', 'asc');
   url.searchParams.set('limit', '100');
   const data = await (await request(url.toString())).json() as MirrorResponse;
@@ -44,7 +58,7 @@ export async function listMessages(base: string, topicId: string, afterSequence:
 
 export async function getMessage(base: string, topicId: string, sequence: number): Promise<MirrorMessage | null> {
   if (!Number.isSafeInteger(sequence) || sequence < 1) throw new Error('Invalid sequence number');
-  const response = await fetch(`${endpoint(base, topicId)}/${sequence}`, { signal: AbortSignal.timeout(15000) });
+  const response = await request(`${endpoint(base, topicId)}/${sequence}`, true);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Mirror Node request failed: ${response.status}`);
   return parseMessage(await response.json() as MirrorResponse['messages'][number]);

@@ -20,8 +20,18 @@ CREATE TABLE IF NOT EXISTS consensus_checkpoints (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Example projection only. Replace with application tables.
-CREATE TABLE IF NOT EXISTS example_tasks (
-  task_id text PRIMARY KEY,
-  title text NOT NULL
-);
+
+-- These tables are backend-owned. On Supabase, public is an exposed API schema.
+-- No browser/Data API role should read or write them without an explicit app policy.
+ALTER TABLE consensus_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE consensus_checkpoints ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON consensus_events, consensus_checkpoints FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON consensus_events, consensus_checkpoints FROM authenticated;
+  END IF;
+END $$;

@@ -1,14 +1,74 @@
 {
+  "name": "consensus-kit",
+  "description": "Verifiable HCS events with PostgreSQL projections and an interactive setup wizard",
+  "version": "0.1.0",
   "create-scaffold-hbar": {
+    "requirements": {
+      "node": ">=20.18.3"
+    },
+    "rename": {
+      "\"lint:core\":": {
+        "to": "\"lint\":",
+        "paths": [
+          "."
+        ]
+      },
+      "\"format:core\":": {
+        "to": "\"format\":",
+        "paths": [
+          "."
+        ]
+      }
+    },
     "capabilities": {
-      "frontend": ["none"],
-      "solidityFramework": ["none"],
-      "packageManager": ["npm"]
+      "frontend": [
+        "none"
+      ],
+      "solidityFramework": [
+        "none"
+      ],
+      "packageManager": [
+        "npm"
+      ]
     },
     "defaults": {
       "frontend": "none",
       "solidityFramework": "none",
       "packageManager": "npm"
+    },
+    "outro": {
+      "sections": [
+        {
+          "title": "Configure ConsensusKit",
+          "steps": [
+            {
+              "label": "Run the interactive setup",
+              "command": "{run:setup}"
+            },
+            {
+              "text": "The wizard asks for your account ID, masked private key, database URL, and topic. It can create the topic and initialize your database."
+            }
+          ]
+        },
+        {
+          "title": "Run your application",
+          "steps": [
+            {
+              "label": "Terminal 1: index HCS events",
+              "command": "{run:consensus:indexer}"
+            },
+            {
+              "label": "Terminal 2: open the explorer",
+              "command": "{run:dev}"
+            },
+            {
+              "label": "Publish the example",
+              "command": "{run:example:publish}"
+            }
+          ]
+        }
+      ],
+      "installCommand": "npm ci"
     }
   }
 }

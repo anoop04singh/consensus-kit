@@ -35,6 +35,7 @@ describe('event contract', () => {
       expect(rows[0].sequenceNumber).toBe(1);
       expect(decodeMirrorEvent(rows[0])).toEqual(event);
       expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('order=asc');
+      expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('sequencenumber=gte%3A1');
     } finally { globalThis.fetch = original; }
   });
 });

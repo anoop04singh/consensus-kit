@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import '../consensus.projectors.js';
 import { writeFile } from 'node:fs/promises';
 import config from '../consensus.config.js';
 import { requireDatabaseUrl } from '../packages/consensus/config.js';

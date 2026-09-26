@@ -1,0 +1,1 @@
+{ "name": "@consensus-kit/contracts", "version": "0.1.0", "private": true, "type": "module", "description": "HCS-only template: no Solidity contracts or deployment required" }

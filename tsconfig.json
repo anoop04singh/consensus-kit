@@ -8,8 +8,20 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["node", "vitest/globals"],
-    "lib": ["ES2022", "DOM"]
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ]
   },
-  "include": ["packages/**/*.ts", "scripts/**/*.ts", "consensus.config.ts", "test/**/*.ts"]
+  "include": [
+    "packages/**/*.ts",
+    "scripts/**/*.ts",
+    "consensus.config.ts",
+    "test/**/*.ts",
+    "consensus.projectors.ts"
+  ]
 }

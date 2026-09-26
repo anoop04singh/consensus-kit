@@ -1,0 +1,12 @@
+{
+  "network": "testnet",
+  "topicId": "0.0.10716275",
+  "sequenceNumber": 3,
+  "eventId": "7de14e90-a746-4c77-9145-015cb45b0a29",
+  "payloadHash": "c0fd8a38dd472ca36687f0092a990553067d9097e07b982ca04aeec092569753",
+  "transactionId": "0.0.10424207@1790351346.892774670",
+  "consensusTimestamp": "1790351351.841580174",
+  "mirrorNodeUrl": "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10716275/messages/3",
+  "hashscanUrl": "https://hashscan.io/testnet/topic/0.0.10716275",
+  "verified": true
+}
