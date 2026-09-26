@@ -2,143 +2,193 @@
 
 [Documentation home](../README.md)
 
-An application consists of event definitions, database tables, and projectors. The bundled tasks stream demonstrates each part under `packages/example`.
+This guide adds an `orders` stream to a generated ConsensusKit project. It uses one event, `ORDER_CREATED`, to create a queryable row in PostgreSQL. The same steps apply to other streams and domain tables.
 
-## 1. Define an event
+ConsensusKit handles HCS publishing, Mirror Node ingestion, sequence order, event metadata, checkpointing, verification, and replay. Your application owns the event contract and the SQL that turns events into current state.
 
-Names and payloads belong to your application:
+## 1. Define the event contract
 
-```ts
-// packages/example/events.ts
-export const TASK_STREAM = 'tasks';
-export const TASK_CREATED = 'TASK_CREATED';
-export type TaskCreated = { title: string };
+Create `packages/orders/package.json` so npm recognizes the directory as a workspace. Choose a package name that is unique in your project:
+
+```json
+{
+  "name": "orders-projection",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module"
+}
 ```
 
-Choose stable names and payload structures. Replay uses your current projector code, so handlers must understand historical events. Validate payloads at runtime; TypeScript alone does not validate messages.
+Run `npm install` once after adding the workspace so `package-lock.json` includes it. Commit the updated lockfile with your application code.
 
-## 2. Create a projection table
+Create `packages/orders/events.ts`:
 
-The example stores queryable task state:
+```ts
+export const ORDER_STREAM = 'orders';
+export const ORDER_CREATED = 'ORDER_CREATED';
+
+export type OrderCreated = { totalCents: number };
+```
+
+Use stable stream and event names. `publish()` validates the generic envelope, but it does not know what `ORDER_CREATED` means. The projector below validates the payload at runtime before changing the database. Keep handlers compatible with historical events because rebuild reads the topic from the beginning.
+
+## 2. Create the projection table
+
+Create `packages/orders/migration.sql`:
 
 ```sql
-CREATE TABLE IF NOT EXISTS example_tasks (
-  task_id text PRIMARY KEY,
-  title text NOT NULL
+CREATE TABLE IF NOT EXISTS orders (
+  order_id text PRIMARY KEY,
+  total_cents bigint NOT NULL
 );
+
+-- This table is written by the backend projector, not by browser roles.
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON orders FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON orders FROM authenticated;
+  END IF;
+END $$;
 ```
 
-The bundled `packages/example/migration.sql` also configures backend-only access. Place your domain SQL alongside domain code and add its URL to `migrationFiles` in `scripts/migrations.ts`:
+The table is an application projection. The framework's `consensus_events` and `consensus_checkpoints` tables are created by `packages/database/migrations/001_initial.sql`.
+
+In `scripts/migrations.ts`, keep the migration runner and set `migrationFiles` to:
 
 ```ts
-new URL('../packages/example/migration.sql', import.meta.url);
+export const migrationFiles = [
+  new URL('../packages/database/migrations/001_initial.sql', import.meta.url),
+  new URL('../packages/orders/migration.sql', import.meta.url),
+];
 ```
 
-Run:
+This replaces the optional tasks migration in a new database. Run:
 
 ```bash
 npm run db:migrate
 ```
 
-The runner executes all registered SQL in one transaction on every invocation. It has no migration-version ledger. Keep initialization SQL repeatable and adopt a versioned migration strategy when your schema requires one. Enable RLS for tables in exposed Supabase schemas and grant access only to intended roles.
+The runner executes every registered SQL file in one transaction on each invocation. It does not track migration versions. Keep initialization SQL repeatable, and use an explicit migration plan for later schema changes. Removing a file from `migrationFiles` does not delete a table that already exists. For Supabase, keep RLS enabled on tables in exposed schemas and grant browser roles only the access your application requires. See [Supabase API security](https://supabase.com/docs/guides/api/securing-your-api).
 
 ## 3. Register a projector
 
+Create `packages/orders/projector.ts`:
+
 ```ts
-// packages/example/projector.ts
 import { registerProjector } from '../indexer/projector.js';
-import { TASK_CREATED, TASK_STREAM } from './events.js';
+import { ORDER_CREATED, ORDER_STREAM } from './events.js';
 
 registerProjector({
-  stream: TASK_STREAM,
+  stream: ORDER_STREAM,
   handlers: {
-    [TASK_CREATED]: async (event, db) => {
-      const payload = event.payload as { title?: unknown };
-      if (typeof payload?.title !== 'string' || !payload.title) {
-        throw new Error('TASK_CREATED requires title');
+    [ORDER_CREATED]: async (event, db) => {
+      const value = event.payload;
+      if (
+        typeof value !== 'object' ||
+        value === null ||
+        !('totalCents' in value) ||
+        typeof value.totalCents !== 'number' ||
+        !Number.isSafeInteger(value.totalCents) ||
+        value.totalCents < 0
+      ) {
+        throw new Error('ORDER_CREATED requires nonnegative integer totalCents');
       }
+
       await db.query(
-        'INSERT INTO example_tasks (task_id, title) VALUES ($1, $2) ' +
-          'ON CONFLICT (task_id) DO UPDATE SET title = EXCLUDED.title',
-        [event.entityId, payload.title],
+        `INSERT INTO orders (order_id, total_cents) VALUES ($1, $2)
+         ON CONFLICT (order_id) DO UPDATE SET total_cents = EXCLUDED.total_cents`,
+        [event.entityId, value.totalCents],
       );
     },
   },
   reset: async (db) => {
-    await db.query('DELETE FROM example_tasks');
+    await db.query('DELETE FROM orders');
   },
 });
 ```
 
-Import the registration from `consensus.projectors.ts`:
+Replace the tasks import in `consensus.projectors.ts` with:
 
 ```ts
-import './packages/example/projector.js';
+import './packages/orders/projector.js';
 ```
 
-The indexer and rebuild commands load this file. Register one projector per stream, including all supported event handlers.
+The indexer and rebuild scripts load `consensus.projectors.ts`. Register one projector per stream and add a handler for each event type you want to project. Events without a matching handler are still indexed as metadata.
 
-### Handler rules
+The `db` argument is the transaction client owned by the indexer. Use it for every projection write; do not commit, roll back, or release it yourself. A handler error rolls back the event metadata, domain writes, and checkpoint together. The `reset` callback must clear this projector's derived state for rebuild. Keep email, payments, and other irreversible side effects outside projectors because replay runs handlers again.
 
-- Use the provided `db` client for projection writes.
-- Do not commit, roll back, or release the client.
-- Use parameterized SQL.
-- Derive state from events rather than the current clock or random values.
-- Keep irreversible external actions, such as sending email, out of projectors; rebuild runs handlers again.
-- Provide `reset` to clear only the projector's derived state.
+## 4. Publish from backend code
 
-An error rolls back metadata, projection writes, and checkpoint together. Events without matching handlers are indexed without domain updates.
-
-## 4. Publish
+Create `scripts/publish-order.ts`:
 
 ```ts
-import { consensus } from './packages/consensus/index.js';
+import { consensus } from '../packages/consensus/index.js';
+import { ORDER_CREATED, ORDER_STREAM } from '../packages/orders/events.js';
 
-const result = await consensus.publish({
-  stream: 'tasks',
-  entityId: 'task_123',
-  type: 'TASK_CREATED',
-  payload: { title: 'Review the event pipeline' },
+const receipt = await consensus.publish({
+  stream: ORDER_STREAM,
+  entityId: 'order_123',
+  type: ORDER_CREATED,
+  payload: { totalCents: 2500 },
 });
+
+console.log(receipt);
 ```
 
-This import is relative to the project root; adjust paths for scripts inside packages.
+Start the indexer in one terminal, then run the publisher in another:
 
-Publishing returns an HCS receipt and does not write to PostgreSQL. Keep the indexer running. Mirror Node ingestion introduces a delay between consensus and database visibility.
+```bash
+npm run consensus:indexer
+```
 
-Each publish call generates a new event ID. Repeating a business action through a second call produces another event. Apply application-level idempotency where required.
+```bash
+npx tsx scripts/publish-order.ts
+```
+
+The `.js` import suffix is used in TypeScript source because this project uses NodeNext module resolution. Keep Hedera keys and database credentials in backend environment variables, never in frontend code.
+
+Publishing returns an HCS receipt with an event ID and sequence number. It does **not** write directly to PostgreSQL. Mirror Node ingestion can take time, and the indexer writes the row only after it reads and validates the message. Each publish call creates a new event ID; use application-level idempotency if retrying a business action must not create a second event.
 
 ## 5. Query and verify
 
-Query projections from your backend:
+Query the projection through your backend or a PostgreSQL client:
 
 ```sql
-SELECT task_id, title FROM example_tasks ORDER BY task_id;
+SELECT order_id, total_cents FROM orders ORDER BY order_id;
 ```
 
-Once indexed:
+Open the explorer with `npm run dev`, select the indexed event, and choose **Verify with Mirror Node**. To verify from backend code, create `scripts/verify-order.ts`:
 
 ```ts
-const verification = await consensus.verify(result.eventId);
-console.log(verification.verified);
+import { consensus } from '../packages/consensus/index.js';
+
+const eventId = process.argv[2];
+if (!eventId) throw new Error('Pass the event ID returned by publish');
+console.log(await consensus.verify(eventId));
 ```
 
-The explorer exposes the same operation. Verification checks the event's relationship to HCS; it does not prove correctness of arbitrary application tables or business logic.
+After the event appears in the explorer, pass the `eventId` printed by the publisher:
 
-## 6. Rebuild
+```bash
+npx tsx scripts/verify-order.ts YOUR_EVENT_ID
+```
 
-Stop the indexer and other projection writers, then run:
+Verification compares the stored metadata and payload hash with the HCS message returned by the configured Mirror Node. It does not verify the correctness of your `orders` table or business rules.
+
+## 6. Rebuild from HCS
+
+Stop the indexer and other writers to the projection tables, then run:
 
 ```bash
 npm run consensus:rebuild
 ```
 
-Rebuild clears registered projections and the configured topic's metadata/checkpoint, then replays available history. Restart the indexer when complete.
+Rebuild clears every registered projector through its `reset` callback, removes indexed metadata and the checkpoint for the configured topic, and replays available HCS history. Restart the indexer when it finishes. To populate a replacement database, point `DATABASE_URL` at it, run `npm run db:migrate`, and rebuild from the same topic.
 
-To use a new database, configure its URL, initialize tables, and rebuild from the same topic. Retain historical handlers and any external data referenced by payloads.
+Replay requires the Mirror Node to retain the required history, handlers to understand historical events, and any data referenced outside HCS to remain available. Test that rebuilding produces the same domain state as ordinary indexing.
 
-## Replace the example
-
-Replace its migration and projector import with your application's equivalents. Keep domain behavior outside `packages/consensus` and `packages/indexer`. Test payload validation, projection behavior, and replay equivalence.
-
-See [API reference](api-reference.md) and [Operations](operations.md).
+For exact SDK contracts, see [API reference](api-reference.md). For failure and recovery behavior, see [Operations](operations.md).

@@ -14,6 +14,8 @@ npm run consensus:indexer
 
 The worker requests up to 100 messages in ascending sequence order and polls every three seconds by default. It checks payload hashes and sequence continuity before committing.
 
+Run `npm run db:migrate` before starting the worker. The worker prints the configured topic when it starts and stays running while it polls. Start the local explorer separately with `npm run dev`; its indexed count and last sequence come from PostgreSQL. “At checkpoint” does not indicate that the worker is running or that Mirror Node is fully caught up.
+
 Mirror Node reads retry transport failures, HTTP 429, and server errors with up to three attempts. Persistent failures stop the worker. Resolve the cause and restart; ingestion resumes from the saved checkpoint.
 
 ## Rebuild projections
@@ -63,7 +65,7 @@ npm test
 Remove-Item Env:RUN_TESTNET_INTEGRATION
 ```
 
-The test exercises publishing, Mirror Node retrieval, indexing, projection, verification, and equality of the complete task projection before and after replay. It requires initialized tables and funded testnet credentials.
+The test exercises publishing, Mirror Node retrieval, indexing, projection, verification, and equality of the complete task projection before and after replay. It requires initialized tables, funded testnet credentials, and the bundled tasks projector and migration. Adapt the test if you replace the tasks example.
 
 ### Public evidence
 
@@ -71,25 +73,27 @@ The test exercises publishing, Mirror Node retrieval, indexing, projection, veri
 npm run consensus:proof
 ```
 
-Publishes an example, waits for Mirror Node, indexes and verifies it, and writes public identifiers and links to `testnet-evidence.json`. Network resets can make historical testnet evidence unavailable.
+Publishes an event from the bundled tasks example, waits for Mirror Node, indexes and verifies it, and writes public identifiers and links to `testnet-evidence.json`. This command requires the tasks projector and table. Network resets can make historical testnet evidence unavailable.
 
 ## Troubleshooting
 
-| Symptom                             | Action                                                                                                    |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Setup needs an interactive terminal | Run setup directly in a terminal with keyboard input.                                                     |
-| Invalid key or signature            | Check account, network, key format, and topic signing authority. Set the key type explicitly.             |
-| Insufficient payer balance          | Fund the testnet account before topic creation or publishing.                                             |
-| Database timeout                    | Check URI, availability, and network access. Use Supabase session pooling on IPv4-only networks.          |
-| `SELF_SIGNED_CERT_IN_CHAIN`         | Configure the Supabase root certificate through setup.                                                    |
-| Missing database relation           | Run migrations against the database used by the indexer.                                                  |
-| Event absent from explorer          | Check topic, run the indexer, allow Mirror Node ingestion time, and refresh.                              |
-| Event is not indexed                | Wait for indexing before verification.                                                                    |
-| Sequence gap                        | Check continuous history at the configured endpoint. Do not advance the checkpoint past missing messages. |
-| Payload hash or schema error        | Inspect the public message and its event contract. Invalid history blocks this strict indexer.            |
-| Projector error                     | Correct validation or SQL, then restart from the checkpoint.                                              |
-| Missing reset handler               | Add reset to every registered projector.                                                                  |
-| Message exceeds 1024 bytes          | Reduce the envelope; publish a reference/digest for externally stored content.                            |
+| Symptom                             | Action                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Setup needs an interactive terminal | Run setup directly in a terminal with keyboard input.                                                         |
+| Invalid key or signature            | Check account, network, key format, and topic signing authority. Set the key type explicitly.                 |
+| Insufficient payer balance          | Fund the testnet account before topic creation or publishing.                                                 |
+| Database timeout                    | Check URI, availability, and network access. Use Supabase session pooling on IPv4-only networks.              |
+| `SELF_SIGNED_CERT_IN_CHAIN`         | Configure the Supabase root certificate through setup.                                                        |
+| Missing database relation           | Run migrations against the database used by the indexer.                                                      |
+| Explorer shows an HTTP 500 error    | Check `DATABASE_URL`, database availability, and whether `npm run db:migrate` ran against that database.      |
+| Event absent from explorer          | Check topic, run the indexer, allow Mirror Node ingestion time, and refresh.                                  |
+| Event is not indexed                | Wait for indexing before verification.                                                                        |
+| Sequence gap                        | Check continuous history at the configured endpoint. Do not advance the checkpoint past missing messages.     |
+| Payload hash or schema error        | Inspect the public message and its event contract. Invalid history blocks this strict indexer.                |
+| Projector error                     | Correct validation or SQL, then restart from the checkpoint.                                                  |
+| Missing reset handler               | Add reset to every registered projector.                                                                      |
+| Message exceeds 1024 bytes          | Reduce the envelope; publish a reference/digest for externally stored content.                                |
+| `protobufjs/minimal.js` is missing  | Run `npm ci` from the project root using the committed lockfile; confirm `protobufjs` is a direct dependency. |
 
 ## Deployment
 

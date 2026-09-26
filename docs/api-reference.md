@@ -2,7 +2,7 @@
 
 [Documentation home](../README.md)
 
-ConsensusKit is distributed as template source. Import from `packages/consensus/index.ts` using a relative `.js` import path in TypeScript.
+ConsensusKit is distributed as template source. From a TypeScript file at the project root, import `consensus` from `./packages/consensus/index.js`. Adjust the relative path from other directories. The `.js` suffix is used in TypeScript source because the project uses NodeNext module resolution.
 
 ## `consensus.publish(input)`
 
@@ -49,7 +49,7 @@ type ConsensusEvent<T = unknown> = {
 
 The ID is a generated UUID. The timestamp is the producer's ISO timestamp; consensus time and sequence arrive separately through Mirror Node.
 
-The payload hash is lowercase hexadecimal SHA-256 of canonical JSON. Object keys are sorted recursively; array order is preserved. The hash covers payload only, not metadata or other fields.
+The payload hash is lowercase hexadecimal SHA-256 of canonical JSON. Object keys are sorted recursively; array order is preserved. The hash covers the payload only, not metadata or other envelope fields. `verify()` does not compare metadata. The payload itself remains in the HCS message so projectors can replay it.
 
 The complete UTF-8 JSON message must fit within **1024 bytes**. For large data, publish a compact reference and digest and maintain durable access to the content.
 
@@ -66,9 +66,9 @@ The complete UTF-8 JSON message must fit within **1024 bytes**. For large data, 
 }
 ```
 
-Empty or duplicate stream registrations throw. The database client is a PostgreSQL transaction client owned by the indexer.
+Empty or duplicate stream registrations throw. Import each projector registration from `consensus.projectors.ts` so the indexer and rebuild scripts load it. The database client is a PostgreSQL transaction client owned by the indexer; handlers must use this client for projection SQL.
 
-Reset is optional at registration but required for every registered projector during rebuild. Missing stream/type handlers do not prevent indexing.
+Reset is optional at registration but required for every registered projector during rebuild. A reset callback should clear only that projector's derived tables. Missing stream/type handlers do not prevent metadata indexing. See [Build an application](build-an-application.md) for a complete registration example.
 
 ## `consensus.verify(eventId)`
 
@@ -87,7 +87,7 @@ Successful result:
 
 Checks event ID, stream, entity, type, stored and recomputed payload hash, configured topic, sequence, and consensus timestamp.
 
-Missing records/messages, invalid envelopes, and mismatches return `verified: false` with a reason. Mismatch results include consensus location fields; missing-record/message results may not. Database and transport failures reject the promise.
+Call verification after the indexer stores the event. Missing records/messages, invalid envelopes, and mismatches return `verified: false` with a reason. Mismatch results include consensus location fields; missing-record/message results may not. Database and transport failures reject the promise.
 
 Verification does not compare arbitrary domain tables, establish publisher identity, or provide a cryptographic proof independent of Mirror Node.
 

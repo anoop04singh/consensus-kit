@@ -30,7 +30,7 @@ This is a workspace monorepo managed with npm. The Scaffold-HBAR manifest declar
 6. A database transaction stores metadata, runs the projector, and advances the checkpoint.
 7. The application queries projections and verifies indexed records against Mirror Node.
 
-The small original payload remains on HCS for replay. Application state lives in domain tables.
+The compact HCS message contains the event envelope and payload needed for replay. PostgreSQL stores framework metadata and your domain projections, not a copy of the full event payload.
 
 ## Framework tables
 

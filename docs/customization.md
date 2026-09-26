@@ -8,13 +8,13 @@ ConsensusKit provides the event infrastructure. You choose the application's eve
 
 The only bundled domain is a tasks stream under `packages/example`. Read its event and projector files, then add your domain code in your own package or directory.
 
-1. Define event names and validate their payloads.
-2. Create a migration for the tables you want to query.
-3. Register a projector with event handlers and a reset callback.
+1. Define event names and runtime payload validation.
+2. Create SQL for the tables you want to query.
+3. Register a projector with event handlers and a `reset` callback.
 4. Import your projector from `consensus.projectors.ts`.
-5. Add your migration URL to `scripts/migrations.ts`.
+5. Add its SQL file to `scripts/migrations.ts`, then run `npm run db:migrate`.
 6. Remove the example registration and migration when you no longer need them.
-7. Add domain tests, including replay equivalence.
+7. Test projection behavior and confirm replay produces the same state.
 
 See [Build an application](build-an-application.md) for complete code examples.
 
@@ -51,12 +51,12 @@ The generic publish, index, verify, and rebuild APIs work with your registered d
 
 ## Project identity and UI
 
-The generated root package name and README heading use your selected project name. Internal workspace names identify the reusable ConsensusKit components.
+The generated root package name and explorer label use your selected project name. Internal workspace names identify the reusable ConsensusKit components.
 
-Replace this project's README description with your application's purpose. The included event explorer is a development tool; its content is based on indexed events rather than the tasks domain. Build your application's UI and API around its own projection tables.
+Update the generated README title and introduction with your application's purpose. The included event explorer is a development tool; its content is based on indexed events rather than the tasks domain. Build your application's UI and API around its own projection tables.
 
 ## Keep the core reusable
 
 Keep business behavior outside `packages/consensus` and `packages/indexer`. Use the PostgreSQL client supplied to each handler so event metadata, your projection, and the checkpoint share a transaction.
 
-Reset handlers should clear only their derived tables. Avoid external side effects in projectors because rebuild executes handlers again. The original guide's scope remains one topic, one bundled example, and generic event infrastructure.
+Reset handlers should clear only their derived tables. Avoid external side effects in projectors because rebuild executes handlers again. The template manages one topic and leaves domain behavior in application code.

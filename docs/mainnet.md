@@ -27,6 +27,8 @@ cd consensus-kit-mainnet
 npm ci
 ```
 
+If you already created a project with Scaffold-HBAR, use that project directory instead. Its source code supports mainnet after the manual configuration below. Keep mainnet credentials and database state separate from any testnet project.
+
 Do not run `npm run setup` in this environment. It creates a testnet client regardless of the network in `consensus.config.ts`. A scaffolder network option alone does not replace the manual configuration below.
 
 ## 2. Configure the mainnet network
