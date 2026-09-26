@@ -24,6 +24,8 @@ You own the event types, business logic, projections, and application UI. Consen
 - A PostgreSQL database, including local PostgreSQL or Supabase.
 - Network access to Hedera, Mirror Node, and your database.
 
+The quick start uses testnet. For a mainnet application, follow [Mainnet setup](docs/mainnet.md).
+
 ## Quick start
 
 ### 1. Create your project
@@ -149,6 +151,7 @@ Follow [Build an application](docs/build-an-application.md) for a complete examp
 
 ## Documentation
 
+- [Mainnet setup](docs/mainnet.md) — network configuration, credentials, topics, and deployment.
 - [Configuration](docs/configuration.md) — wizard, environment, PostgreSQL, and Supabase.
 - [Build an application](docs/build-an-application.md) — events, migrations, and projectors.
 - [API reference](docs/api-reference.md) — SDK, event format, and HTTP endpoints.

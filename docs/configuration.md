@@ -4,6 +4,8 @@
 
 Credentials are read from the project-root `.env`; application settings live in `consensus.config.ts`.
 
+For mainnet, use the manual steps in [Mainnet setup](mainnet.md). The wizard is testnet-only.
+
 ## Interactive setup
 
 ```bash

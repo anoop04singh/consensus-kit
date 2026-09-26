@@ -2,6 +2,8 @@
 
 [Documentation home](../README.md)
 
+For mainnet configuration and command restrictions, see [Mainnet setup](mainnet.md).
+
 ## Run the event pipeline
 
 Run one indexer for the configured topic:
@@ -42,6 +44,8 @@ npm run build
 Tests cover hashing, schema validation, Mirror Node decoding/retries, deduplication, routing, rollback, sequence gaps, payload integrity, key parsing, and environment serialization.
 
 ### Live integration
+
+Keep `RUN_TESTNET_INTEGRATION` unset on mainnet. This suite uses the central configuration and does not enforce a testnet network guard.
 
 Use a dedicated testnet topic and disposable database. The live test publishes a testnet event and resets/replays configured projections. Stop the indexer first.
 
