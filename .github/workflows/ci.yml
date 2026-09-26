@@ -34,7 +34,14 @@ jobs:
           GIT_COMMITTER_EMAIL: ci@consensuskit.local
         run: |
           cd "$RUNNER_TEMP"
-          npx --yes create-scaffold-hbar@0.4.0 sample-events --template anoop04singh/consensus-kit#master --frontend none --solidity-framework none --network testnet --package-manager npm --skip-hedera-skills --ci
+          set +e
+          npx --yes create-scaffold-hbar@0.4.0 sample-events --template anoop04singh/consensus-kit#master --frontend none --solidity-framework none --network testnet --package-manager npm --skip-hedera-skills --ci > scaffold.log 2>&1
+          result=$?
+          cat scaffold.log
+          if [ "$result" -ne 0 ]; then
+            node -e 'const fs=require("node:fs"); const lines=fs.readFileSync("scaffold.log","utf8").trim().split(/\r?\n/).slice(-18); console.log("::error title=Scaffold generation failed::"+lines.join(" | ").replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A"));'
+            exit "$result"
+          fi
       - name: Check installed runtime and generated project
         run: |
           cd "$RUNNER_TEMP/sample-events"
