@@ -2,6 +2,14 @@
 
 **A Scaffold-HBAR template for verifiable, event-driven applications.**
 
+## Demo Video
+
+Watch the ConsensusKit demo:
+
+[![Watch the demo](https://img.youtube.com/vi/ni-yt4F859c/maxresdefault.jpg)](https://youtu.be/ni-yt4F859c)
+
+[Watch on YouTube](https://youtu.be/ni-yt4F859c)
+
 ConsensusKit connects a Hedera Consensus Service (HCS) topic to PostgreSQL. Your application publishes a compact event to HCS. A worker reads the event through Mirror Node in consensus order, stores its metadata, and runs the projector you registered for that event. The included explorer shows indexed events and can compare an indexed record with its HCS message.
 
 You define the event types, domain tables, projection logic, and application UI. The template supplies publishing, ordered indexing, checkpointing, replay, and verification. The tasks stream under `packages/example` is a small optional demonstration.
